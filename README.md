@@ -41,13 +41,13 @@ Grey: Letter is not in the word.
 3. Duel Mode
 Click Duel Mode on the main menu to choose between:
 
-A. Local Duel (Same PC)
-Player 1 and Player 2 enter a secret word for the other to guess.Click FIGHT!
-The game alternates turns between Player 1 (you) and Player 2 (opponent).The first player to guess their opponent's word, or the player who uses fewer attempts, is the winner.
+      A. Local Duel (Same PC)
+      Player 1 and Player 2 enter a secret word for the other to guess.Click FIGHT!
+      The game alternates turns between Player 1 (you) and Player 2 (opponent).The first player to guess their opponent's word, or the player who uses fewer attempts, is the winner.
 
-B. Link Duel (Async Challenge)
-Create Link: Enter your secret word and click Generate Link. Copy the generated link and send it to your friend.
-Join Link: If you receive a link from a friend, paste it into the "Have a duel link?" box on the main menu and click JOIN.
+      B. Link Duel (Async Challenge)
+      Create Link: Enter your secret word and click Generate Link. Copy the generated link and send it to your friend.
+      Join Link: If you receive a link from a friend, paste it into the "Have a duel link?" box on the main menu and click JOIN.
 
 Hope ya have fun :D
 
