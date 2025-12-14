@@ -48,9 +48,9 @@ Click Duel Mode on the main menu to choose between:
       B. Link Duel (Async Challenge)
       Create Link: Enter your secret word and click Generate Link. Copy the generated link and send it to your friend.
       Join Link: If you receive a link from a friend, paste it into the "Have a duel link?" box on the main menu and click JOIN.
+      If it's an Initial Link, you will guess your friend's word.
+      If it's a Return Link, you will guess your friend's word, and the game will immediately calculate and display the winner based on both players' scores.
 
 Hope ya have fun :D
 
-If it's an Initial Link, you will guess your friend's word.
 
-If it's a Return Link, you will guess your friend's word, and the game will immediately calculate and display the winner based on both players' scores.
