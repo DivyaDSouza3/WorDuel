@@ -349,7 +349,7 @@ class SingleGameWindow:
             for ch in r:
                 btn = tk.Button(rframe, text=ch, width=4, height=1, 
                                 bg="white", fg=THEME["text_main"], relief="flat",
-                                activebackground="#eee",
+                                activebackground=THEME["grey"], # Improved hover
                                 command=lambda c=ch: self._on_key_click(c))
                 btn.pack(side="left", padx=2)
                 self.key_buttons[ch.lower()] = btn
@@ -357,7 +357,8 @@ class SingleGameWindow:
         # Tools row
         tools = tk.Frame(kb_frame, bg=THEME["bg"])
         tools.pack(pady=4)
-        tk.Button(tools, text="⌫", command=self._on_backspace, bg=THEME["secondary"], relief="flat", width=6).pack(side="left", padx=5)
+        # Added activebackground for backspace
+        tk.Button(tools, text="⌫", command=self._on_backspace, bg=THEME["secondary"], relief="flat", activebackground=THEME["grey"], width=6).pack(side="left", padx=5)
 
     def _on_key_click(self, ch):
         cur = self.guess_var.get()
@@ -464,9 +465,12 @@ class SingleGameWindow:
 # DUEL PLAYER PANEL
 # ---------------------------------------------------------
 class PlayerPanel(tk.Frame):
-    def __init__(self, parent, player_id, title, word_length, secret_word, on_finish, on_guess):
+    # CHANGED: Added 'profile' argument
+    def __init__(self, parent, player_id, title, word_length, secret_word, on_finish, on_guess, profile):
         super().__init__(parent, bg=THEME["bg"])
         self.player_id = player_id
+        self.title = title
+        self.profile = profile # <<< ADDED: Store the profile
         self.word_length = word_length
         self.secret = secret_word.lower()
         self.on_finish = on_finish
@@ -499,8 +503,9 @@ class PlayerPanel(tk.Frame):
         self.guess_entry.pack(side="left", padx=5, ipady=3)
         self.guess_entry.bind("<Return>", lambda e: self.submit_guess())
         
+        # Added activebackground for GO button
         self.submit_btn = tk.Button(inp, text="GO", command=self.submit_guess, 
-                                    bg=THEME["primary"], fg="white", relief="flat", width=4)
+                                    bg=THEME["primary"], fg="white", relief="flat", activebackground=THEME["primary_hover"], width=4)
         self.submit_btn.pack(side="left")
 
         # Tiny Keyboard
@@ -511,12 +516,14 @@ class PlayerPanel(tk.Frame):
             rf = tk.Frame(kb_frame, bg=THEME["bg"])
             rf.pack(pady=1)
             for ch in r:
-                b = tk.Button(rf, text=ch, width=2, relief="flat", font=("Arial", 7),
+                # Added activebackground for keyboard keys
+                b = tk.Button(rf, text=ch, width=2, relief="flat", font=("Arial", 7), activebackground=THEME["grey"],
                               command=lambda c=ch: self._on_key(c))
                 b.pack(side="left", padx=1)
                 self.key_buttons[ch.lower()] = b
         
-        tk.Button(kb_frame, text="⌫", command=self._backspace, bg=THEME["secondary"], relief="flat", font=("Arial", 8)).pack(pady=2)
+        # Added activebackground for backspace
+        tk.Button(kb_frame, text="⌫", command=self._backspace, bg=THEME["secondary"], relief="flat", activebackground=THEME["grey"], font=("Arial", 8)).pack(pady=2)
 
         self.status_lbl = tk.Label(self, text=f"Left: {MAX_ATTEMPTS}", bg=THEME["bg"], fg=THEME["muted"], font=("Arial", 9))
         self.status_lbl.pack(pady=2)
@@ -618,6 +625,14 @@ class PlayerPanel(tk.Frame):
         if self.attempts_used is None:
             self.attempts_used = MAX_ATTEMPTS + 1
             self.guessed = False
+            
+        # Reveal the word if the player lost the duel round
+        if not self.guessed:
+            messagebox.showinfo(
+                f"{self.title}: Game Over", 
+                f"You ran out of guesses!\nThe secret word was: {self.secret.upper()}"
+            )
+
         if self.on_finish:
             self.on_finish(self.player_id, self.attempts_used, self.guessed)
 
@@ -625,12 +640,12 @@ class PlayerPanel(tk.Frame):
 # CHARACTER CREATOR (Cuter)
 # ---------------------------------------------------------
 class InlinePopupCharacterCreator:
-    def __init__(self, parent_frame, on_done):
+    def __init__(self, parent_frame, on_done, initial_name="Player"):
         self.parent = parent_frame
         self.on_done = on_done
         self.available_bases, self.available_exprs, self.available_outfits = find_layer_files()
         
-        self.username_var = tk.StringVar(value="Player")
+        self.username_var = tk.StringVar(value=initial_name)
         # Ensure initial keys exist in their respective lists if they are found
         self.color_key = next(iter(self.available_bases.keys()), "default")
         self.expr_key = next(iter(self.available_exprs.keys()), "smile")
@@ -638,12 +653,14 @@ class InlinePopupCharacterCreator:
         self.active_category = "base"
         self.tk_cache = {}
 
+        # The grey frame acts as a subtle shadow/border
         self.popup = tk.Frame(self.parent, bg=THEME["grey"], bd=0)
         # MODIFICATION: Keeps the reduced size from the previous step.
         self.popup.place(relx=0.5, rely=0.5, anchor="center", width=450, height=470)
         
         self.card = tk.Frame(self.popup, bg="white")
-        self.card.pack(fill="both", expand=True, padx=2, pady=2)
+        # Added padding inside the grey container for a more prominent border/shadow effect
+        self.card.pack(fill="both", expand=True, padx=4, pady=4) 
 
         tk.Label(self.card, text="Design Your Character", bg="white", fg=THEME["primary"], font=("Helvetica", 16, "bold")).pack(pady=(20,10))
 
@@ -662,8 +679,10 @@ class InlinePopupCharacterCreator:
         toggles.pack(pady=(0,10))
         self.toggle_buttons = {}
         for cat in ("base", "expr", "outfit"):
+            # Added activebackground for solid button feel
             b = tk.Button(toggles, text=cat.capitalize(), width=8, font=("Helvetica", 10, "bold"),
-                          relief="flat", command=lambda c=cat: self._set_active_category(c))
+                          relief="flat", bd=0, activebackground=THEME["primary_hover"], 
+                          command=lambda c=cat: self._set_active_category(c))
             b.pack(side="left", padx=5)
             self.toggle_buttons[cat] = b
         self._highlight_active_toggle()
@@ -672,7 +691,7 @@ class InlinePopupCharacterCreator:
         pv = tk.Frame(content, bg="white")
         pv.pack()
         
-        tk.Button(pv, text="❮", font=("Arial", 14), width=3, bg="white", relief="flat", 
+        tk.Button(pv, text="❮", font=("Arial", 14), width=3, bg="white", relief="flat", activebackground=THEME["grey"], 
                   command=lambda: self._cycle_active(-1)).grid(row=0, column=0, padx=10)
         
         self.preview_label_img = tk.Label(pv, bg="white")
@@ -681,15 +700,16 @@ class InlinePopupCharacterCreator:
         # Use label if PIL available, else canvas
         if not PIL_AVAILABLE: self.preview_canvas.grid(row=0, column=1)
             
-        tk.Button(pv, text="❯", font=("Arial", 14), width=3, bg="white", relief="flat", 
+        tk.Button(pv, text="❯", font=("Arial", 14), width=3, bg="white", relief="flat", activebackground=THEME["grey"],
                   command=lambda: self._cycle_active(1)).grid(row=0, column=2, padx=10)
 
         # Actions
         action_row = tk.Frame(content, bg="white")
         action_row.pack(side="bottom", pady=(10, 20))
-        tk.Button(action_row, text="Save & Play", font=("Helvetica", 12, "bold"), 
-                  bg=THEME["primary"], fg="white", relief="flat", padx=20, pady=6, 
-                  command=self._submit).pack(side="left", padx=10)
+        # Added activebackground for Save button
+        tk.Button(action_row, text="Save & Continue", font=("Helvetica", 12, "bold"), 
+                  bg=THEME["primary"], fg="white", relief="flat", activebackground=THEME["primary_hover"], 
+                  padx=20, pady=6, command=self._submit).pack(side="left", padx=10)
 
         self._redraw_preview()
 
@@ -704,9 +724,12 @@ class InlinePopupCharacterCreator:
         self._redraw_preview() # Redraw when category changes to reflect current state
 
     def _highlight_active_toggle(self):
+        # CHANGE: Use secondary color for inactive state for a more finished look
         for c, b in self.toggle_buttons.items():
-            if c == self.active_category: b.config(bg=THEME["primary"], fg="white")
-            else: b.config(bg=THEME["bg"], fg=THEME["muted"])
+            if c == self.active_category: 
+                b.config(bg=THEME["primary"], fg="white")
+            else: 
+                b.config(bg=THEME["secondary"], fg=THEME["text_main"])
 
     def _cycle_active(self, delta):
         lst = self._get_list(self.active_category)
@@ -776,6 +799,7 @@ class MainApp:
     def __init__(self, root, profile=None):
         self.root = root
         self.profile = profile or {}
+        self.profile_p2 = {} # <<< ADDED: Profile for Player 2 (Local Duel Opponent)
         self.root.title("WorDuel")
         self.root.configure(bg=THEME["bg"])
         try: root.state('zoomed')
@@ -792,12 +816,15 @@ class MainApp:
         # Nav
         nav = tk.Frame(self.frame, bg=THEME["bg"])
         nav.pack(pady=10)
+        # CHANGE: Use THEME["secondary"] for nav buttons for a more solid feel
         self.btn_std = tk.Button(nav, text="Single Player", font=("Helvetica", 12, "bold"), width=15, height=2,
-                  bg="white", relief="flat", command=self.start_standard_flow)
+                  bg=THEME["secondary"], fg=THEME["text_main"], relief="flat", activebackground=THEME["primary_hover"], 
+                  command=self.start_standard_flow)
         self.btn_std.grid(row=0, column=0, padx=10)
         
         self.btn_duel = tk.Button(nav, text="Duel Mode", font=("Helvetica", 12, "bold"), width=15, height=2,
-                  bg="white", relief="flat", command=self.open_duel_options)
+                  bg=THEME["secondary"], fg=THEME["text_main"], relief="flat", activebackground=THEME["primary_hover"],
+                  command=self.open_duel_options)
         self.btn_duel.grid(row=0, column=1, padx=10)
 
         # Main Content
@@ -807,12 +834,11 @@ class MainApp:
         self.link_entry = None
         self._main_avatar_tk = None # Keep ref
 
-        # Show creator first
-        InlinePopupCharacterCreator(self.center_frame, on_done=self.on_profile_created)
+        # Show creator first (for P1)
+        InlinePopupCharacterCreator(self.center_frame, on_done=self.on_profile_created, initial_name="Player 1")
 
     def on_profile_created(self, profile):
         self.profile = profile
-        # MODIFICATION: Removed temporary greeting and call setup_main_menu directly
         self.setup_main_menu()
 
     def setup_main_menu(self):
@@ -827,8 +853,10 @@ class MainApp:
         inp_box.pack()
         self.link_entry = tk.Entry(inp_box, width=50, relief="flat", font=("Helvetica", 10))
         self.link_entry.pack(side="left", padx=5)
-        tk.Button(inp_box, text="JOIN", bg=THEME["primary"], fg="white", font=("Helvetica", 9, "bold"), 
-                  relief="flat", command=self._join_from_box).pack(side="left")
+        # CHANGE: Increased font/padding and added activebackground for a more solid feel
+        tk.Button(inp_box, text="JOIN", bg=THEME["primary"], fg="white", font=("Helvetica", 10, "bold"), 
+                  relief="flat", activebackground=THEME["primary_hover"], padx=10, pady=2,
+                  command=self._join_from_box).pack(side="left")
 
         # Avatar Display
         if self.profile:
@@ -853,10 +881,11 @@ class MainApp:
         spin.pack(pady=10, ipady=5)
         
         tk.Button(self.center_frame, text="START GAME", bg=THEME["primary"], fg="white", 
-                  font=("Helvetica", 12, "bold"), relief="flat", padx=20, pady=10,
+                  font=("Helvetica", 12, "bold"), relief="flat", activebackground=THEME["primary_hover"], padx=20, pady=10,
                   command=lambda: self._start_standard(len_var.get())).pack(pady=20)
         
-        tk.Button(self.center_frame, text="Back", bg=THEME["bg"], fg=THEME["muted"], relief="flat", 
+        # Changed back button style to have an active foreground color
+        tk.Button(self.center_frame, text="Back", bg=THEME["bg"], fg=THEME["muted"], relief="flat", bd=0, activeforeground=THEME["text_main"],
                   command=self.setup_main_menu).pack()
 
     def _start_standard(self, length):
@@ -870,39 +899,62 @@ class MainApp:
         opt_frame = tk.Frame(self.center_frame, bg=THEME["bg"])
         opt_frame.pack(pady=20)
         
-        tk.Button(opt_frame, text="Local Duel (Same PC)", width=30, height=2, bg="white", relief="flat", font=("Helvetica", 11),
+        tk.Button(opt_frame, text="Local Duel (Same PC)", width=30, height=2, bg="white", relief="flat", activebackground=THEME["grey"], font=("Helvetica", 11),
                   command=self.duel_same_device_setup).pack(pady=10)
         
-        tk.Button(opt_frame, text="Create Link (Send to Friend)", width=30, height=2, bg="white", relief="flat", font=("Helvetica", 11),
+        tk.Button(opt_frame, text="Create Link (Send to Friend)", width=30, height=2, bg="white", relief="flat", activebackground=THEME["grey"], font=("Helvetica", 11),
                   command=self.duel_share_link_setup).pack(pady=10)
         
-        tk.Button(self.center_frame, text="Back", bg=THEME["bg"], fg=THEME["muted"], relief="flat", 
+        # Changed back button style to have an active foreground color
+        tk.Button(self.center_frame, text="Back", bg=THEME["bg"], fg=THEME["muted"], relief="flat", bd=0, activeforeground=THEME["text_main"],
                   command=self.setup_main_menu).pack()
 
     # ---------------------------
     # SAME DEVICE DUEL LOGIC
     # ---------------------------
+    # NEW: Initiates P2 setup before word input
     def duel_same_device_setup(self):
-        # ... setup UI same as before, simplified ...
+        self._start_p2_creator_for_duel()
+
+    # NEW: Opens the creator for P2
+    def _start_p2_creator_for_duel(self):
         for w in self.center_frame.winfo_children(): w.destroy()
-        tk.Label(self.center_frame, text="Local Duel Setup", bg=THEME["bg"], font=("Helvetica", 14, "bold")).pack(pady=10)
+        tk.Label(self.center_frame, text="Player 2: Design Your Opponent", bg=THEME["bg"], font=("Helvetica", 16, "bold")).pack(pady=10)
+        # Use P2 default name
+        InlinePopupCharacterCreator(self.center_frame, on_done=self._on_p2_profile_created, initial_name="Player 2")
+
+    # NEW: Callback after P2 creation, proceeds to word input
+    def _on_p2_profile_created(self, profile):
+        self.profile_p2 = profile
+        self._setup_local_duel_word_input()
+
+    # NEW: Handles word input after P1 and P2 profiles are set
+    def _setup_local_duel_word_input(self):
+        for w in self.center_frame.winfo_children(): w.destroy()
+        tk.Label(self.center_frame, text="Enter Secret Words", bg=THEME["bg"], font=("Helvetica", 14, "bold")).pack(pady=10)
         
         # Simple inputs container
         f = tk.Frame(self.center_frame, bg=THEME["bg"])
         f.pack(pady=10)
         
+        p1_name = self.profile.get("username", "Player 1")
+        p2_name = self.profile_p2.get("username", "Player 2")
+        
         # P1
-        tk.Label(f, text="Player 1 Secret:", bg=THEME["bg"]).grid(row=0, column=0, padx=10, pady=5)
+        tk.Label(f, text=f"{p1_name}'s Secret:", bg=THEME["bg"]).grid(row=0, column=0, padx=10, pady=5)
         p1_word = tk.Entry(f, show="*")
         p1_word.grid(row=0, column=1, padx=10, pady=5)
         
         # P2
-        tk.Label(f, text="Player 2 Secret:", bg=THEME["bg"]).grid(row=1, column=0, padx=10, pady=5)
+        tk.Label(f, text=f"{p2_name}'s Secret:", bg=THEME["bg"]).grid(row=1, column=0, padx=10, pady=5)
         p2_word = tk.Entry(f, show="*")
         p2_word.grid(row=1, column=1, padx=10, pady=5)
 
-        tk.Button(self.center_frame, text="FIGHT!", bg=THEME["primary"], fg="white", font=("Helvetica", 12, "bold"), relief="flat",
+        # Added activebackground for FIGHT button
+        tk.Button(self.center_frame, text="FIGHT!", bg=THEME["primary"], fg="white", font=("Helvetica", 12, "bold"), relief="flat", activebackground=THEME["primary_hover"],
                   command=lambda: self._start_same_device_duel(p1_word.get().strip(), p2_word.get().strip())).pack(pady=20)
+        
+        tk.Button(self.center_frame, text="Back", command=self.open_duel_options, relief="flat", bd=0, bg=THEME["bg"], fg=THEME["muted"], activeforeground=THEME["text_main"]).pack()
 
     def _start_same_device_duel(self, p1_w, p2_w):
         p1_w = p1_w.lower()
@@ -916,6 +968,12 @@ class MainApp:
         if VALID_WORDS and (p1_w not in VALID_WORDS or p2_w not in VALID_WORDS):
             messagebox.showerror("Oops", "Both secret words must be valid words from the dictionary.")
             return
+        
+        # Check lengths
+        if len(p1_w) != len(p2_w):
+            messagebox.showerror("Oops", "Both secret words must be the same length for a fair duel.")
+            return
+
 
         # Basic validation passed
         for w in self.center_frame.winfo_children(): w.destroy()
@@ -935,10 +993,14 @@ class MainApp:
         
         # P1 tries to guess P2's word
         p1_name = self.profile.get("username", "Player 1")
-        self.panel_p1 = PlayerPanel(left, "P1", p1_name, len(p2_w), p2_w, self._player_finished, self._player_made_guess)
+        # CHANGED: Passed self.profile
+        self.panel_p1 = PlayerPanel(left, "P1", p1_name, len(p2_w), p2_w, self._player_finished, self._player_made_guess, self.profile)
         self.panel_p1.pack()
+        
         # P2 tries to guess P1's word
-        self.panel_p2 = PlayerPanel(right, "P2", "Player 2 (Opponent)", len(p1_w), p1_w, self._player_finished, self._player_made_guess)
+        p2_name = self.profile_p2.get("username", "Player 2 (Opponent)")
+        # CHANGED: Passed self.profile_p2
+        self.panel_p2 = PlayerPanel(right, "P2", p2_name, len(p1_w), p1_w, self._player_finished, self._player_made_guess, self.profile_p2)
         self.panel_p2.pack()
         
         self.active = "P1"
@@ -1006,18 +1068,28 @@ class MainApp:
         else:
             tk.Label(card, text=f"{winner_name} Wins!", font=("Helvetica", 20, "bold"), bg=THEME["bg"], fg=THEME["success"]).pack(pady=10)
             
-            # Display Avatar if P1 (local user) won
+            winner_profile = None
             if winner_name == "Player 1":
+                winner_profile = self.profile
+                # Use P1's customized name for the overlay text
+                p1_username = self.profile.get("username", "Player 1")
+                tk.Label(card, text=f"Congratulations, {p1_username}!", bg=THEME["bg"], fg=THEME["muted"]).pack()
+            elif winner_name == "Player 2":
+                winner_profile = self.profile_p2 # <<< Using P2's custom profile
+                # Use P2's customized name for the overlay text
+                p2_username = self.profile_p2.get("username", "Player 2")
+                tk.Label(card, text=f"Congratulations, {p2_username}!", bg=THEME["bg"], fg=THEME["muted"]).pack()
+
+            if winner_profile:
                 canv = tk.Canvas(card, width=120, height=120, bg=THEME["bg"], highlightthickness=0)
                 canv.pack(pady=10)
-                draw_profile_avatar(canv, self.profile, 120, 120)
+                draw_profile_avatar(canv, winner_profile, 120, 120)
                 self.tk_cache["duel_win_avatar"] = canv # Cache to prevent GC
-            # Display a generic placeholder for Player 2
-            elif winner_name == "Player 2":
+            else:
                  tk.Label(card, text="👤", font=("Helvetica", 60), bg=THEME["bg"]).pack(pady=10)
         # END CHANGE 1
 
-        tk.Button(card, text="Back to Menu", bg=THEME["primary"], fg="white", font=("Helvetica", 12), relief="flat",
+        tk.Button(card, text="Back to Menu", bg=THEME["primary"], fg="white", font=("Helvetica", 12), relief="flat", activebackground=THEME["primary_hover"],
                   command=self.setup_main_menu).pack(pady=20)
 
     # ---------------------------
@@ -1051,11 +1123,13 @@ class MainApp:
             top.geometry("600x150")
             tk.Label(top, text="Send this link to your friend:").pack(pady=10)
             e = tk.Entry(top, width=80); e.pack(padx=10); e.insert(0, link)
-            tk.Button(top, text="Done", command=lambda: [top.destroy(), self.setup_main_menu()]).pack(pady=10)
+            tk.Button(top, text="Done", activebackground=THEME["grey"], command=lambda: [top.destroy(), self.setup_main_menu()]).pack(pady=10)
 
+        # Added activebackground for Generate Link button
         tk.Button(self.center_frame, text="Generate Link", bg=THEME["primary"], fg="white", font=("Helvetica", 11, "bold"),
-                  relief="flat", command=generate).pack(pady=20)
-        tk.Button(self.center_frame, text="Back", command=self.setup_main_menu, relief="flat", bg=THEME["bg"]).pack()
+                  relief="flat", activebackground=THEME["primary_hover"], command=generate).pack(pady=20)
+        # Changed back button style to have an active foreground color
+        tk.Button(self.center_frame, text="Back", command=self.setup_main_menu, relief="flat", bd=0, bg=THEME["bg"], fg=THEME["muted"], activeforeground=THEME["text_main"]).pack()
 
     def _join_from_box(self):
         txt = self.link_entry.get().strip()
@@ -1079,14 +1153,22 @@ class MainApp:
                 def on_host_finish(attA, guessA):
                     # Compare
                     winner = "Tie"
-                    if guessA and not guessB: winner = "You"
+                    if guessA and not guessB: winner = self.profile.get("username", "You")
                     elif guessB and not guessA: winner = "Friend"
                     elif guessA and guessB:
-                        if attA < attB: winner = "You"
+                        if attA < attB: winner = self.profile.get("username", "You")
                         elif attB < attA: winner = "Friend"
                     
                     # Show result overlay
-                    msg = f"Winner: {winner}\n(You: {attA if guessA else 'X'}, Friend: {attB if guessB else 'X'})"
+                    msg = f"Winner: {winner}\n({self.profile.get('username', 'You')}: {attA if guessA else 'X'}, Friend: {attB if guessB else 'X'})"
+                    
+                    # New reveal for the host player if they lost (guessing the friend's word)
+                    if not guessA:
+                         messagebox.showinfo(
+                            f"{self.profile.get('username', 'Your')} Game Over", 
+                            f"You ran out of guesses!\nThe secret word was: {secB.upper()}"
+                        )
+                        
                     messagebox.showinfo("Duel Result", msg)
                 
                 SingleGameWindow(self.root, secB, lr, self.profile, title="Duel: Your Turn", on_finish=on_host_finish)
@@ -1107,6 +1189,13 @@ class MainApp:
             def on_friend_finish(attB, guessB):
                 # Friend finished guessing Host's word.
                 # Now Friend creates return link with their stats + their secret
+                
+                # New reveal for the friend player if they lost (guessing the host's word)
+                if not guessB:
+                     messagebox.showinfo(
+                        f"{self.profile.get('username', 'Your')} Game Over", 
+                        f"You ran out of guesses!\nThe secret word was: {secretA.upper()}"
+                    )
                 
                 # Popup to ask for secret
                 pop = tk.Toplevel(self.root)
@@ -1135,7 +1224,7 @@ class MainApp:
                     e2 = tk.Entry(top2, width=80); e2.pack(padx=10); e2.insert(0, ret_link)
                     pop.destroy()
                     
-                tk.Button(pop, text="Create Return Link", command=make_ret).pack(pady=10)
+                tk.Button(pop, text="Create Return Link", activebackground=THEME["grey"], command=make_ret).pack(pady=10)
 
             SingleGameWindow(self.root, secretA, length, self.profile, title="Duel: Guess Host's Word", on_finish=on_friend_finish)
         except Exception as e:
